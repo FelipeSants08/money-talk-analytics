@@ -3,6 +3,7 @@ package com.santana.money_talk_analytics.scheduler;
 import com.santana.money_talk_analytics.client.CoinGeckoClient;
 import com.santana.money_talk_analytics.dto.CoinMarketDTO;
 import com.santana.money_talk_analytics.model.MarketAlert;
+import com.santana.money_talk_analytics.service.AiInsightService;
 import com.santana.money_talk_analytics.service.MarketAnalysisService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +20,7 @@ public class MarketMonitoringScheduler {
 
     private final CoinGeckoClient client;
     private final MarketAnalysisService service;
+    private final AiInsightService aiInsight;
 
     @Value("${coingecko.api.key:}")
     private String apiKey;
@@ -45,6 +47,8 @@ public class MarketMonitoringScheduler {
                     alert.getCoin().name(),
                     alert.getTriggeredValue()));
 
+            String insightText = aiInsight.generateMarketSummary(alerts);
+            log.info("\n=== ANÁLISE GERADA PELA IA ===\n{}\n==============================", insightText);
 
         } catch (Exception e){
             log.error("Erro ao executar o monitoramento de mercado", e);
