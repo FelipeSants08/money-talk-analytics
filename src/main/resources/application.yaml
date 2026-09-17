@@ -1,3 +1,10 @@
 spring:
   application:
     name: money-talk-analytics
+  ai:
+    google:
+      genai:
+        api-key: ${GEMINI_API_KEY}
+coingecko:
+  api:
+    key: ${API_KEY_COINGECKO}
