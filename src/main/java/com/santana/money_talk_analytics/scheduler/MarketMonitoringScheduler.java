@@ -5,6 +5,7 @@ import com.santana.money_talk_analytics.dto.CoinMarketDTO;
 import com.santana.money_talk_analytics.model.MarketAlert;
 import com.santana.money_talk_analytics.service.AiInsightService;
 import com.santana.money_talk_analytics.service.MarketAnalysisService;
+import com.santana.money_talk_analytics.service.TelegramService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,11 +22,12 @@ public class MarketMonitoringScheduler {
     private final CoinGeckoClient client;
     private final MarketAnalysisService service;
     private final AiInsightService aiInsight;
+    private final TelegramService telegramService;
 
     @Value("${coingecko.api.key:}")
     private String apiKey;
 
-    @Scheduled(fixedRate = 100000)
+    @Scheduled(fixedRate = 900000)
     public void monitorMarket(){
         log.info("Iniciando monitoramento do mercado de criptomoedas...");
 
@@ -48,7 +50,9 @@ public class MarketMonitoringScheduler {
                     alert.getTriggeredValue()));
 
             String insightText = aiInsight.generateMarketSummary(alerts);
-            log.info("\n=== ANÁLISE GERADA PELA IA ===\n{}\n==============================", insightText);
+
+
+            telegramService.sendMessage(insightText);
 
         } catch (Exception e){
             log.error("Erro ao executar o monitoramento de mercado", e);
