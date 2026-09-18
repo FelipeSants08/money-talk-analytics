@@ -23,7 +23,7 @@ public class TelegramService {
     public void sendMessage(String message) {
         try {
             TelegramMessageDTO request =
-                    new TelegramMessageDTO(chatId, message, "Markdown");
+                    new TelegramMessageDTO(chatId, message, "HTML");
 
             client.sendMessage(botToken, request);
             log.info("Notificação enviada com sucesso para o Telegram!");

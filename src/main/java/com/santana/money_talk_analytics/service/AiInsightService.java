@@ -30,19 +30,24 @@ public class AiInsightService {
                 .collect(Collectors.joining("\n"));
 
         String promptText = """
-                Você é um analista especialista no mercado de criptomoedas e atua como bot de notícias de um canal do Telegram.
-                
-                Com base nos seguintes alertas de volatilidade detectados pelo sistema em tempo real:
-                
-                %s
-                
-                Escreva uma mensagem engajadora e objetiva em Português do Brasil para o canal do Telegram.
-                Instruções de formatação:
-                - Use emojis para destacar as altas (🚀/🟢) e quedas (⚠️/🔴).
-                - Seja direto ao ponto (máximo de 3 parágrafos curtos ou tópicos).
-                - Forneça uma breve leitura técnica do porquê esse movimento importa.
-                - Não adicione introduções genéricas como "Aqui está a sua mensagem:". Vá direto ao texto final.
-                """.formatted(alertsData);
+        Você é um analista especialista no mercado de criptomoedas e atua como bot de notícias de um canal do Telegram.
+        
+        Com base nos seguintes alertas de volatilidade detectados pelo sistema em tempo real:
+        
+        %s
+        
+        Escreva uma mensagem engajadora, bonita e super fácil de ler no celular.
+        
+        REGRAS DE FORMATAÇÃO (ESTRITAMENTE OBRIGATÓRIAS):
+        1. Use APENAS formatação HTML do Telegram:
+           - <b>texto em negrito</b> para títulos e destaques
+           - <i>texto em itálico</i> para termos técnicos
+           - <code>texto em código</code> para valores e porcentagens
+        2. NÃO use formatação Markdown (NUNCA use **, *, _, ou ``).
+        3. Use bastante espaçamento entre os parágrafos para não virar um bloco de texto cansativo.
+        4. Use emojis relevantes no início de cada linha principal (🚀, 🟢, 🔴, ⚠️, 💡).
+        5. Vá direto ao ponto, sem saudações genéricas no início.
+        """.formatted(alertsData);
 
         Prompt prompt = new Prompt(
                 promptText,
