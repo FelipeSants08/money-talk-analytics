@@ -1,6 +1,7 @@
 package com.santana.money_talk_analytics.scheduler;
 
 import com.santana.money_talk_analytics.client.CoinGeckoClient;
+import com.santana.money_talk_analytics.config.MarketProperties;
 import com.santana.money_talk_analytics.dto.CoinMarketDTO;
 import com.santana.money_talk_analytics.model.AlertType;
 import com.santana.money_talk_analytics.model.MarketAlert;
@@ -39,12 +40,21 @@ class MarketMonitoringSchedulerTest {
     @Mock
     private TelegramService telegramService;
 
+    @Mock
+    private MarketProperties marketProperties;
+
     @InjectMocks
     private MarketMonitoringScheduler scheduler;
 
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(scheduler, "apiKey", "test-api-key");
+
+        MarketProperties.Thresholds thresholds = new MarketProperties.Thresholds(
+                new BigDecimal("7.0"), new BigDecimal("-7.0"), new BigDecimal("3.0"));
+        lenient().when(marketProperties.currency()).thenReturn("brl");
+        lenient().when(marketProperties.topCoins()).thenReturn(20);
+        lenient().when(marketProperties.thresholds()).thenReturn(thresholds);
     }
 
     // -------------------------------------------------------------------------

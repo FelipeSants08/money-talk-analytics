@@ -1,5 +1,6 @@
 package com.santana.money_talk_analytics.validation;
 
+import com.santana.money_talk_analytics.config.MarketProperties;
 import com.santana.money_talk_analytics.dto.CoinMarketDTO;
 import com.santana.money_talk_analytics.model.AlertType;
 import com.santana.money_talk_analytics.model.MarketAlert;
@@ -19,7 +20,12 @@ class Volatility1hStrategyTest {
 
     @BeforeEach
     void setUp() {
-        strategy = new Volatility1hStrategy();
+        MarketProperties.Thresholds thresholds = new MarketProperties.Thresholds(
+                new BigDecimal("7.0"),
+                new BigDecimal("-7.0"),
+                new BigDecimal("3.0")
+        );
+        strategy = new Volatility1hStrategy(new MarketProperties(thresholds, 20, "brl"));
     }
 
     private CoinMarketDTO coinWith1hChange(BigDecimal change) {
