@@ -13,6 +13,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Component
@@ -27,16 +28,17 @@ public class MarketMonitoringScheduler {
     @Value("${coingecko.api.key:}")
     private String apiKey;
 
-    @Scheduled(fixedRate = 900000)
+    @Scheduled(fixedRate = 20, timeUnit = TimeUnit.MINUTES)
     public void monitorMarket(){
         log.info("Iniciando monitoramento do mercado de criptomoedas...");
 
         try {
-            log.info(apiKey);
+
             List<CoinMarketDTO> topCoins = client.getTopCoins(
                     apiKey, "brl", "market_cap_desc", 20, 1, false, "1h,24h,7d");
 
             List<MarketAlert> alerts = service.analyzeMarket(topCoins);
+            log.info("Número de alertas ativos: " + alerts.size());
 
             if (alerts.isEmpty()){
                 log.info("Mercado estável. Nenhum alerta relevante gerado nesta checagem.");
@@ -50,7 +52,7 @@ public class MarketMonitoringScheduler {
                     alert.getTriggeredValue()));
 
             String insightText = aiInsight.generateMarketSummary(alerts);
-
+            log.info("Mensagem do Agente recebida!");
 
             telegramService.sendMessage(insightText);
 
