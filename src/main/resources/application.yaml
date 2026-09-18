@@ -8,6 +8,10 @@ spring:
         chat:
           options:
             model: gemini-3.6-flash
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      post: 6379
 coingecko:
   api:
     key: ${API_KEY_COINGECKO}
