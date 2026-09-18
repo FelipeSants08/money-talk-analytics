@@ -11,10 +11,18 @@ spring:
   data:
     redis:
       host: ${REDIS_HOST:localhost}
-      post: 6379
+      port: 6379
 coingecko:
   api:
     key: ${API_KEY_COINGECKO}
 telegram:
   bot-token: ${TELEGRAM_BOT_TOKEN}
   chat-id: ${TELEGRAM_CHAT_ID}
+
+market:
+  top-coins: 20
+  currency: brl
+  thresholds:
+    pump-24h: 7.0
+    dump-24h: -7.0
+    volatility-1h: 3.0
