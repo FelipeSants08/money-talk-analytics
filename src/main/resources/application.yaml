@@ -20,9 +20,10 @@ telegram:
   chat-id: ${TELEGRAM_CHAT_ID}
 
 market:
-  top-coins: 20
+  top-coins: 30
   currency: brl
   thresholds:
     pump-24h: 7.0
     dump-24h: -7.0
     volatility-1h: 3.0
+    high-volatility-7-days: 15.0

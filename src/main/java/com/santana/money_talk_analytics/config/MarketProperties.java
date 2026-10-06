@@ -13,6 +13,7 @@ public record MarketProperties(
     public record Thresholds(
             BigDecimal pump24h,
             BigDecimal dump24h,
-            BigDecimal volatility1h
+            BigDecimal volatility1h,
+            BigDecimal highVolatility7Days
     ) {}
 }

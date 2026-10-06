@@ -51,7 +51,7 @@ class MarketMonitoringSchedulerTest {
         ReflectionTestUtils.setField(scheduler, "apiKey", "test-api-key");
 
         MarketProperties.Thresholds thresholds = new MarketProperties.Thresholds(
-                new BigDecimal("7.0"), new BigDecimal("-7.0"), new BigDecimal("3.0"));
+                new BigDecimal("7.0"), new BigDecimal("-7.0"), new BigDecimal("3.0"), new BigDecimal("15.0"));
         lenient().when(marketProperties.currency()).thenReturn("brl");
         lenient().when(marketProperties.topCoins()).thenReturn(20);
         lenient().when(marketProperties.thresholds()).thenReturn(thresholds);

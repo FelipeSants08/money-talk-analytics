@@ -23,7 +23,8 @@ class Dump24hStrategyTest {
         MarketProperties.Thresholds thresholds = new MarketProperties.Thresholds(
                 new BigDecimal("7.0"),
                 new BigDecimal("-7.0"),
-                new BigDecimal("3.0")
+                new BigDecimal("3.0"),
+                new BigDecimal("15.0")
         );
         strategy = new Dump24hStrategy(new MarketProperties(thresholds, 20, "brl"));
     }
