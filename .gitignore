@@ -1,4 +1,5 @@
 HELP.md
+.env
 GUIA_DE_TESTES.md
 .gradle
 build/
