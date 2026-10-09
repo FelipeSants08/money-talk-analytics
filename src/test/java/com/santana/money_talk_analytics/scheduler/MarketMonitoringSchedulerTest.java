@@ -8,19 +8,20 @@ import com.santana.money_talk_analytics.model.MarketAlert;
 import com.santana.money_talk_analytics.service.AiInsightService;
 import com.santana.money_talk_analytics.service.MarketAnalysisService;
 import com.santana.money_talk_analytics.service.TelegramService;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -43,23 +44,29 @@ class MarketMonitoringSchedulerTest {
     @Mock
     private MarketProperties marketProperties;
 
+    @Mock
+    private RedisTemplate<String, String> redisTemplate;
+
     @InjectMocks
     private MarketMonitoringScheduler scheduler;
-
-    @BeforeEach
-    void setUp() {
-        ReflectionTestUtils.setField(scheduler, "apiKey", "test-api-key");
-
-        MarketProperties.Thresholds thresholds = new MarketProperties.Thresholds(
-                new BigDecimal("7.0"), new BigDecimal("-7.0"), new BigDecimal("3.0"), new BigDecimal("15.0"));
-        lenient().when(marketProperties.currency()).thenReturn("brl");
-        lenient().when(marketProperties.topCoins()).thenReturn(20);
-        lenient().when(marketProperties.thresholds()).thenReturn(thresholds);
-    }
 
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
+
+    /**
+     * Configures the marketProperties mock with standard values.
+     * Called only in tests that actually reach the CoinGecko call,
+     * avoiding UnnecessaryStubbingException in error-path tests.
+     */
+    private void givenMarketPropertiesConfigured() {
+        when(marketProperties.currency()).thenReturn("brl");
+        when(marketProperties.topCoins()).thenReturn(20);
+    }
+
+    private void givenApiKey() {
+        ReflectionTestUtils.setField(scheduler, "apiKey", "test-api-key");
+    }
 
     private CoinMarketDTO fakeCoin() {
         return new CoinMarketDTO(
@@ -80,6 +87,9 @@ class MarketMonitoringSchedulerTest {
     @Test
     @DisplayName("should fetch coins, analyse market, generate AI insight and send Telegram message")
     void shouldExecuteFullPipelineWhenAlertsExist() {
+        givenApiKey();
+        givenMarketPropertiesConfigured();
+
         CoinMarketDTO coin = fakeCoin();
         MarketAlert alert = fakeAlert(coin);
         String aiMessage = "🚀 Bitcoin disparou!";
@@ -102,10 +112,13 @@ class MarketMonitoringSchedulerTest {
     @Test
     @DisplayName("should NOT call AI or Telegram when no alerts are generated")
     void shouldSkipAiAndTelegramWhenMarketIsStable() {
+        givenApiKey();
+        givenMarketPropertiesConfigured();
+
         when(coinGeckoClient.getTopCoins(any(), any(), any(), anyInt(), anyInt(), anyBoolean(), any()))
                 .thenReturn(List.of(fakeCoin()));
         when(marketAnalysisService.analyzeMarket(any()))
-                .thenReturn(List.of()); // empty = market stable
+                .thenReturn(List.of());
 
         scheduler.monitorMarket();
 
@@ -116,6 +129,9 @@ class MarketMonitoringSchedulerTest {
     @Test
     @DisplayName("should pass the configured API key to CoinGecko client")
     void shouldPassApiKeyToCoinGeckoClient() {
+        givenApiKey();
+        givenMarketPropertiesConfigured();
+
         when(coinGeckoClient.getTopCoins(any(), any(), any(), anyInt(), anyInt(), anyBoolean(), any()))
                 .thenReturn(List.of());
         when(marketAnalysisService.analyzeMarket(any())).thenReturn(List.of());
@@ -133,17 +149,21 @@ class MarketMonitoringSchedulerTest {
     @Test
     @DisplayName("should NOT propagate exception when CoinGecko client throws")
     void shouldSwallowExceptionWhenCoinGeckoFails() {
+        givenApiKey();
+        givenMarketPropertiesConfigured();
+
         when(coinGeckoClient.getTopCoins(any(), any(), any(), anyInt(), anyInt(), anyBoolean(), any()))
                 .thenThrow(new RuntimeException("CoinGecko API down"));
 
-        // monitorMarket must not rethrow — it catches and logs the exception
-        org.assertj.core.api.Assertions.assertThatNoException()
-                .isThrownBy(() -> scheduler.monitorMarket());
+        assertThatNoException().isThrownBy(() -> scheduler.monitorMarket());
     }
 
     @Test
-    @DisplayName("should NOT call Telegram when AI service throws")
-    void shouldNotCallTelegramWhenAiServiceFails() {
+    @DisplayName("should send fallback message to Telegram when AI service throws")
+    void shouldSendFallbackMessageWhenAiServiceFails() {
+        givenApiKey();
+        givenMarketPropertiesConfigured();
+
         CoinMarketDTO coin = fakeCoin();
         MarketAlert alert = fakeAlert(coin);
 
@@ -153,10 +173,31 @@ class MarketMonitoringSchedulerTest {
         when(aiInsightService.generateMarketSummary(any()))
                 .thenThrow(new RuntimeException("Gemini API timeout"));
 
-        // Exception must be swallowed and Telegram must never be called
-        org.assertj.core.api.Assertions.assertThatNoException()
-                .isThrownBy(() -> scheduler.monitorMarket());
+        // The scheduler catches the AI error, deletes the Redis keys to allow a retry,
+        // and then sends a generic fallback message — so Telegram IS called.
+        assertThatNoException().isThrownBy(() -> scheduler.monitorMarket());
 
-        verifyNoInteractions(telegramService);
+        verify(telegramService, times(1)).sendMessage(contains("Não foi possível"));
+    }
+
+    @Test
+    @DisplayName("should delete Redis keys for affected alerts when AI service fails")
+    void shouldDeleteRedisKeysWhenAiServiceFails() {
+        givenApiKey();
+        givenMarketPropertiesConfigured();
+
+        CoinMarketDTO coin = fakeCoin();
+        MarketAlert alert = fakeAlert(coin);
+
+        when(coinGeckoClient.getTopCoins(any(), any(), any(), anyInt(), anyInt(), anyBoolean(), any()))
+                .thenReturn(List.of(coin));
+        when(marketAnalysisService.analyzeMarket(any())).thenReturn(List.of(alert));
+        when(aiInsightService.generateMarketSummary(any()))
+                .thenThrow(new RuntimeException("Gemini API timeout"));
+
+        scheduler.monitorMarket();
+
+        // Expected key format: "alert:<coinId>:<alertType>"
+        verify(redisTemplate, times(1)).delete("alert:bitcoin:PUMP_24H");
     }
 }
