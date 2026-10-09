@@ -4,7 +4,7 @@ Bot de monitoramento de criptomoedas que detecta movimentos relevantes de mercad
 
 ## Como funciona
 
-A cada **20 minutos**, o sistema busca os dados das top 20 criptomoedas por capitalização de mercado via [CoinGecko](https://www.coingecko.com/). Para cada moeda, aplica um conjunto de estratégias de validação. Quando algum alerta é disparado, o [Google Gemini](https://ai.google.dev/) gera uma mensagem analítica e engajadora que é enviada diretamente para o Telegram.
+A cada **20 minutos**, o sistema busca os dados das top 30 criptomoedas por capitalização de mercado via [CoinGecko](https://www.coingecko.com/). Para cada moeda, aplica um conjunto de estratégias de validação. Quando algum alerta é disparado, o [Google Gemini](https://ai.google.dev/) gera uma mensagem analítica e engajadora que é enviada diretamente para o Telegram.
 
 Para evitar spam, alertas repetidos para a mesma moeda ficam em cooldown de **4 horas** via Redis.
 
