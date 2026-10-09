@@ -10,6 +10,7 @@ import com.santana.money_talk_analytics.service.TelegramService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -26,6 +27,7 @@ public class MarketMonitoringScheduler {
     private final AiInsightService aiInsight;
     private final TelegramService telegramService;
     private final MarketProperties marketProperties;
+    private final RedisTemplate redisTemplate;
 
     @Value("${coingecko.api.key:}")
     private String apiKey;
@@ -57,11 +59,21 @@ public class MarketMonitoringScheduler {
                     alert.getAlertType(),
                     alert.getCoin().name(),
                     alert.getTriggeredValue()));
-
-            String insightText = aiInsight.generateMarketSummary(alerts);
-            log.info("Mensagem do Agente recebida!");
+            String insightText = "";
+            try {
+                insightText = aiInsight.generateMarketSummary(alerts);
+                log.info("Mensagem do Agente recebida!");
+            }catch (Exception e){
+                log.error("Erro ao gerar ou enviar mensagem do Agente para o Telegram", e);
+                alerts.forEach(alert ->{
+                    String redisKey = String.format("alert:%s:%s", alert.getCoin().id(), alert.getAlertType());
+                    redisTemplate.delete(redisKey);
+                });
+                insightText = "Não foi possível fazer a análise detalhada do mercado desta vez, mas foram detectados alertas de volatilidade. Fique atento às movimentações!";
+            }
 
             telegramService.sendMessage(insightText);
+
 
         } catch (Exception e) {
             log.error("Erro ao executar o monitoramento de mercado", e);
