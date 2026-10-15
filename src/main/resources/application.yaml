@@ -27,3 +27,10 @@ market:
     dump-24h: -7.0
     volatility-1h: 3.0
     high-volatility-7-days: 15.0
+
+feign:
+  client:
+    config:
+      default:
+        connectTimeout: 10000
+        readTimeout: 100000

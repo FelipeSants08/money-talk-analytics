@@ -32,7 +32,7 @@ public class MarketMonitoringScheduler {
     @Value("${coingecko.api.key:}")
     private String apiKey;
 
-    @Scheduled(fixedRate = 20, timeUnit = TimeUnit.MINUTES)
+    //@Scheduled(fixedRate = 20, timeUnit = TimeUnit.MINUTES)
     public void monitorMarket() {
         log.info("Iniciando monitoramento do mercado de criptomoedas...");
 
@@ -59,6 +59,7 @@ public class MarketMonitoringScheduler {
                     alert.getAlertType(),
                     alert.getCoin().name(),
                     alert.getTriggeredValue()));
+
             String insightText = "";
             try {
                 insightText = aiInsight.generateMarketSummary(alerts);
