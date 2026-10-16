@@ -40,3 +40,31 @@ jobs:
           context: .
           push: true
           tags: felipesants08/money-talk-analytics:latest
+
+      - name: Executar Deploy na EC2 via SSH
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            
+            docker pull felipesants08/money-talk-analytics:latest
+
+          
+            docker stop money-talk-analytics || true
+            docker rm money-talk-analytics || true
+
+            
+            docker run -d \
+            --name money-talk-analytics \
+            --network money-network \
+            -p 80:8080 \
+            -e SPRING_DATA_REDIS_HOST=redis-money \
+            -e SPRING_DATA_REDIS_PORT=6379 \
+            -e GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY }}" \
+            -e API_KEY_COINGECKO="${{ secrets.API_KEY_COINGECKO }}" \
+            -e TELEGRAM_BOT_TOKEN="${{ secrets.TELEGRAM_BOT_TOKEN }}" \
+            -e TELEGRAM_CHAT_ID="${{ secrets.TELEGRAM_CHAT_ID }}" \
+            felipesants08/money-talk-analytics:latest
